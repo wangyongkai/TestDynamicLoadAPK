@@ -53,6 +53,8 @@ public class DLProxyActivity extends Activity implements DLAttachable {
 
     @Override
     public AssetManager getAssets() {
+        //DLPluginManager是单例 虽然每个插件new一个DLProxyImpl 但是DLProxyImpl中获取的mAssetManager都是一个对象
+        //插件内activity的跳转可以共用一个DLProxyActivity 不用担心资源重复加载问题
         return impl.getAssets() == null ? super.getAssets() : impl.getAssets();
     }
 
