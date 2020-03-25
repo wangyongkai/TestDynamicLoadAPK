@@ -53,12 +53,21 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
     //so文件安装后放在 /data/data/包名/lib/ 目录下 该目录是程序不能操作的，
     // 不能在程序运行时，向该目录拷贝.so文件 。所以要想动态加载so 只能用 System.load(filepath);
-    //举例：如何在不安装app的情况下更新线上的so库？思路：第一次安装带上so用System.loadlibrary加载so
+    //举例：如何在不安装app的情况下更新线上的so库？
+    // 思路：第一次安装带上so用System.loadlibrary加载so
     // 以后启动app都请求接口查看是否需要更新so 如果需要则则先下载so 同时修改加载so的地方为System.load(filepath)
+    //补充：思路不对。第一次是用PathClassLoader加载so  加载插件会用另一个DexClassLoader中指定so路径
+    //不可能修改PathClassLoader加载的so的路径。如果指定DexClassLoader的so路径为PathClassLoader加载的so的
+    // 路径，则因为目录不能修改。如果指定其他目录。则插件中System.loadlibrary不行。
 
 
     //本项目中在加载插件apk的时候 将其中的so复制到/data/user/0/com.king.testdynamicloadapk/app_pluginlib目录下
     //然后利用DexClassLoader传进这个so的path进行动态加载apk中的so文件
+
+
+    //问题：插件中用System.loadlibrary加载so 怎么知道去哪个路径下加载so
+    //DexClassLoader传入参数librarySearchPath 这个就是指定本地so的路径 所以把所有插件的so都复制到这个路径下  控制好更新即可
+
 
     //------------------------------------------------------------------------
 
@@ -157,6 +166,9 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
 
         int i = 1;
+        //看到本地库so有三个目录
+        //dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/com.king.testdynamicloadapk-1/base.apk"],
+        // nativeLibraryDirectories=[/data/app/com.king.testdynamicloadapk-1/lib/x86, /system/lib, /vendor/lib]]]
         ClassLoader classLoader = getClassLoader();//dalvik.system.PathClassLoader
         if (classLoader != null) {
             Log.i("MainActivity", "[onCreate] classLoader " + i + " : " + classLoader.toString());
