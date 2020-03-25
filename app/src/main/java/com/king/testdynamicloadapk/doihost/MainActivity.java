@@ -146,6 +146,10 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
     //问题8：DexClassLoader或者PathClassLoader的区别
     //DexClassLoader可以指定优化后的dex的存储路径 而PathClassLoademer没有指定的参数
+    //Android系统通过PathClassLoader来加载系统类和主dex中的类。classloader中的
+    // SystemClassLoader就是PathClassLoader
+
+    //如一个apk安装后的dex中的自定义activity类是用PathClassLoader加载的。而继承的Activity类是用BootClassLoader加载的。
 
 
     //------------------------------------------------------------------------
@@ -160,6 +164,7 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //3.跟之前的Element[]合并
 
     //Mutlidex跟插件化不一样，Mutlidex是对同一个pathclassloader进行修改。（补丁包？）      插件化是用dexclassloader加载。
+
 
     //------------------------------------------------------------------------
 
