@@ -28,6 +28,8 @@ import com.ryg.dynamicload.internal.DLIntent;
 import com.ryg.dynamicload.internal.DLPluginManager;
 import com.ryg.utils.DLUtils;
 
+import dalvik.system.DexFile;
+
 public class MainActivity extends Activity implements OnItemClickListener {
 
     public static final String FROM = "extra.from";
@@ -140,6 +142,165 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
 
     //------------------------------------------------------------------------
+
+
+    //问题8：DexClassLoader或者PathClassLoader的区别
+    //DexClassLoader可以指定优化后的dex的存储路径 而PathClassLoademer没有指定的参数
+
+
+    //------------------------------------------------------------------------
+
+
+    //问题9：多dex下  如何先加载主dex  后加载从dex
+    //Dalivk只加载app的主dex（classes.dex），因此app需要自行加载子dex（classesN.dex）。Mutlidex.install就是干这个事的。
+
+    //Mutlidex 源码分析  原理
+    //1.获取加载主dex的pathclassloader
+    //2.反射调用DexPathList的makeDexElements将剩余的dex文件加载获取Element[]
+    //3.跟之前的Element[]合并
+
+    //Mutlidex跟插件化不一样，Mutlidex是对同一个pathclassloader进行修改。（补丁包？）      插件化是用dexclassloader加载。
+
+    //------------------------------------------------------------------------
+
+
+    //问题10：加载dex loadDexFile就是加载类了吗
+    //个人理解loadDexFile只是将dex文件映射到内存中。真正触发加载是在用到某个类时findClass时dex.loadClassBinaryName触发
+
+//BaseDexClassLoader源码解析
+
+//    public class BaseDexClassLoader extends ClassLoader {
+//        // 需要加载的dex列表
+//        private final DexPathList pathList;
+//        // dexPath要加载的dex文件所在的路径，optimizedDirectory是odex将dexPath
+//        // 处dex优化后输出到的路径，这个路径必须是手机内部路劲，libraryPath是需要
+//        // 加载的C/C++库路径，parent是父类加载器对象
+//        public BaseDexClassLoader(String dexPath, File optimizedDirectory,
+//                                  String libraryPath, ClassLoader parent) {
+//            super(parent);
+//            this.pathList = new DexPathList(this, dexPath, libraryPath, optimizedDirectory);
+//        }
+//
+//        @Override
+//        protected Class<?> findClass(String name) throws ClassNotFoundException {
+//            List<Throwable> suppressedExceptions = new ArrayList<Throwable>();
+//            // 使用pathList对象查找name类
+//            Class c = pathList.findClass(name, suppressedExceptions);
+//            return c;
+//        }
+//    }
+
+
+//    // Element类代表dex文件或资源文件的路径元素
+//    /*package*/ static class Element {
+//        private final File file;
+//        private final boolean isDirectory;
+//        private final File zip;
+//        private final DexFile dexFile;
+//
+//        private ZipFile zipFile;
+//        private boolean initialized;
+//
+//        // file文件，是否是目录，zip文件通常都是apk或jar文件，dexFile就是.dex文件
+//        public Element(File file, boolean isDirectory, File zip, DexFile dexFile) {
+//            this.file = file;
+//            this.isDirectory = isDirectory;
+//            this.zip = zip;
+//            this.dexFile = dexFile;
+//        }
+//    }
+
+
+//    /*package*/ final class DexPathList {
+//        private static final String DEX_SUFFIX = ".dex";
+//        private final ClassLoader definingContext;
+//        //
+//        private final Element[] dexElements;
+//        // 本地库目录
+//        private final File[] nativeLibraryDirectories;
+//
+//        public DexPathList(ClassLoader definingContext, String dexPath,
+//                           String libraryPath, File optimizedDirectory) {
+//            // 当前类加载器的父类加载器
+//            this.definingContext = definingContext;
+//            ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+//            // 根据输入的dexPath创建dex元素对象
+//            this.dexElements = makeDexElements(splitDexPath(dexPath), optimizedDirectory,
+//                    suppressedExceptions);
+//            if (suppressedExceptions.size() > 0) {
+//                this.dexElementsSuppressedExceptions =
+//                        suppressedExceptions.toArray(new IOException[suppressedExceptions.size()]);
+//            } else {
+//                dexElementsSuppressedExceptions = null;
+//            }
+//            this.nativeLibraryDirectories = splitLibraryPath(libraryPath);
+//        }
+//    }
+
+
+//    private static Element[] makeDexElements(ArrayList<File> files, File optimizedDirectory,
+//                                             ArrayList<IOException> suppressedExceptions) {
+//        ArrayList<Element> elements = new ArrayList<Element>();
+//        // 所有从dexPath找到的文件
+//        for (File file : files) {
+//            File zip = null;
+//            DexFile dex = null;
+//            String name = file.getName();
+//            // 如果是文件夹，就直接将路径添加到Element中
+//            if (file.isDirectory()) {
+//                elements.add(new Element(file, true, null, null));
+//            } else if (file.isFile()){
+//                // 如果是文件且文件名以.dex结束
+//                if (name.endsWith(DEX_SUFFIX)) {
+//                    try {
+//                        // 直接从.dex文件生成DexFile对象
+//                        dex = loadDexFile(file, optimizedDirectory);//底层openDexFileNative代码中主要是对dex文件进行了优化操作，并将优将优化后得dex文件（odex文件）通过mmap映射到内存中。
+//                    } catch (IOException ex) {
+//                        System.logE("Unable to load dex file: " + file, ex);
+//                    }
+//                } else {
+//                    zip = file;
+//
+//                    try {
+//                        // 从APK/JAR文件中读取dex文件
+//                        dex = loadDexFile(file, optimizedDirectory);
+//                    } catch (IOException suppressed) {
+//                        suppressedExceptions.add(suppressed);
+//                    }
+//                }
+//            } else {
+//                System.logW("ClassLoader referenced unknown path: " + file);
+//            }
+//
+//            if ((zip != null) || (dex != null)) {
+//                elements.add(new Element(file, false, zip, dex));
+//            }
+//        }
+//
+//        return elements.toArray(new Element[elements.size()]);
+//    }
+
+
+//    // BaseDexClassLoader中的方法 加载名字为name的class对象
+//    public Class findClass(String name, List<Throwable> suppressed) {
+//        // 遍历从dexPath查询到的dex和资源Element
+//        for (Element element : dexElements) {
+//            DexFile dex = element.dexFile;
+//            // 如果当前的Element是dex文件元素
+//            if (dex != null) {
+//                // 使用DexFile.loadClassBinaryName加载类
+//                Class clazz = dex.loadClassBinaryName(name, definingContext, suppressed);
+//                if (clazz != null) {
+//                    return clazz;
+//                }
+//            }
+//        }
+//        if (dexElementsSuppressedExceptions != null) {
+//            suppressed.addAll(Arrays.asList(dexElementsSuppressedExceptions));
+//        }
+//        return null;
+//    }
+
 
     //------------------------------------------------------------------------
 
