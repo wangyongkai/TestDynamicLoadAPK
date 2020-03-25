@@ -59,6 +59,7 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //补充：思路不对。第一次是用PathClassLoader加载so  加载插件会用另一个DexClassLoader中指定so路径
     //不可能修改PathClassLoader加载的so的路径。如果指定DexClassLoader的so路径为PathClassLoader加载的so的
     // 路径，则因为目录不能修改。如果指定其他目录。则插件中System.loadlibrary不行。
+    //还有 插件化就是为了减少包的大小  所以壳中应该尽量不带插件中so
 
 
     //本项目中在加载插件apk的时候 将其中的so复制到/data/user/0/com.king.testdynamicloadapk/app_pluginlib目录下
