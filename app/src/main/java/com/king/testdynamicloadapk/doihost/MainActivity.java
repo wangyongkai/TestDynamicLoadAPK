@@ -226,10 +226,11 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //------------------------------------------------------------------------
 
 
-    //问题10：加载dex loadDexFile就是加载类了吗
-    //个人理解loadDexFile只是将dex文件映射到内存中。真正触发加载是在用到某个类时findClass时dex.loadClassBinaryName触发
-
 //BaseDexClassLoader源码解析
+//app启动时，BaseDexClassLoader先把dex都加载到内存中，形成Element[] dexElements;注意此时并没有加载类，
+// 只是将dex文件映射到内存中。真正触发加载是在用到某个类时findClass时dex.loadClassBinaryName触发,会遍历dexElements
+// 加载类。所以热修复等必须要在使用某个类前把dex反射加载到Element[] dexElements。
+
 
 //    public class BaseDexClassLoader extends ClassLoader {
 //        // 需要加载的dex列表
