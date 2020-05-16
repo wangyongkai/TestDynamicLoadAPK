@@ -212,8 +212,15 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //------------------------------------------------------------------------
 
 
-    //问题9：多dex下  如何先加载主dex  后加载从dex
+    //问题9：如果插件中用到了Mutlidex ？
+
+    //个人理解：不会有影响。因为加载主dex的时候，Mutlidex.install会获取加载主dex的类加载器然后再去加载从dex。
+    // 这样保证主从都是同一个类加载器加载。
+
+
+    //多dex下  如何先加载主dex  后加载从dex
     //Dalivk只加载app的主dex（classes.dex），因此app需要手动加载子dex（classesN.dex）。Mutlidex.install就是干这个事的。
+
 
     //Mutlidex 源码分析  原理
     //1.获取加载主dex的pathclassloader
@@ -225,6 +232,8 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
     //------------------------------------------------------------------------
 
+
+//------------------------------------------------------------------------
 
 //BaseDexClassLoader源码解析
 //app启动时，BaseDexClassLoader先把dex都加载到内存中，形成Element[] dexElements;注意此时并没有加载类，
