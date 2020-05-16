@@ -46,7 +46,7 @@ public class DLProxyFragmentActivity extends FragmentActivity implements DLAttac
     }
 
     @Override
-    public void attach(DLPlugin remoteActivity, DLPluginManager pluginManager) {
+    public void attach(DLPlugin remoteActivity) {
         mRemoteActivity = remoteActivity;
     }
 

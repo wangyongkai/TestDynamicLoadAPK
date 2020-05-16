@@ -40,7 +40,7 @@ import java.lang.reflect.Constructor;
  * This is a plugin activity proxy, the proxy will create the plugin activity
  * with reflect, and then call the plugin activity's attach、onCreate method, at
  * this time, the plugin activity is running.
- * 
+ *
  * @author mrsimple
  */
 public class DLProxyImpl {
@@ -123,27 +123,29 @@ public class DLProxyImpl {
         mClass = intent.getStringExtra(DLConstants.EXTRA_CLASS);
         Log.d(TAG, "mClass=" + mClass + " mPackageName=" + mPackageName);
 
+
+        //根据包名再次获取这个插件包加载的信息：mAssetManager  mResources
         mPluginManager = DLPluginManager.getInstance(mProxyActivity);
         mPluginPackage = mPluginManager.getPackage(mPackageName);
         mAssetManager = mPluginPackage.assetManager;
         mResources = mPluginPackage.resources;
 
-        initializeActivityInfo();
-        handleActivityInfo();
+        //initializeActivityInfo();
+        //handleActivityInfo();
         launchTargetActivity();
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    protected void launchTargetActivity() {
+    protected void launchTargetActivity() {//此方法实在代理Activity的onCreate方法执行的
         try {
             Class<?> localClass = getClassLoader().loadClass(mClass);
-            Constructor<?> localConstructor = localClass.getConstructor(new Class[] {});
-            Object instance = localConstructor.newInstance(new Object[] {});
+            Constructor<?> localConstructor = localClass.getConstructor(new Class[]{});
+            Object instance = localConstructor.newInstance(new Object[]{});//反射创建插件的activity
             mPluginActivity = (DLPlugin) instance;
-            ((DLAttachable) mProxyActivity).attach(mPluginActivity, mPluginManager);
+            ((DLAttachable) mProxyActivity).attach(mPluginActivity);//把插件中的activity给代理activity  好让代理执行插件的activity的生命周期
             Log.d(TAG, "instance = " + instance);
             // attach the proxy activity and plugin package to the mPluginActivity
-            mPluginActivity.attach(mProxyActivity, mPluginPackage);
+            mPluginActivity.attach(mProxyActivity, mPluginPackage);//把代理activity给插件activity  好让插件中的activity执行findViewById等activity应该有的方法
 
             Bundle bundle = new Bundle();
             bundle.putInt(DLConstants.FROM, DLConstants.FROM_EXTERNAL);

@@ -75,8 +75,8 @@ public class DLBasePluginActivity extends Activity implements DLPlugin {
     @Override
     public void attach(Activity proxyActivity, DLPluginPackage pluginPackage) {
         Log.d(TAG, "attach: proxyActivity= " + proxyActivity);
-        mProxyActivity = (Activity) proxyActivity;
-        that = mProxyActivity;
+        mProxyActivity = (Activity) proxyActivity;//代理activity
+        that = mProxyActivity;//代理activity
         mPluginPackage = pluginPackage;
     }
 

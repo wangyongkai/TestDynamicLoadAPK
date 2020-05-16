@@ -177,7 +177,7 @@ public class DLPluginManager {
 
     private AssetManager createAssetManager(String dexPath) {
         try {
-            AssetManager assetManager = AssetManager.class.newInstance();
+            AssetManager assetManager = AssetManager.class.newInstance();//创建新的AssetManager对象
             Method addAssetPath = assetManager.getClass().getMethod("addAssetPath", String.class);
             addAssetPath.invoke(assetManager, dexPath);
             return assetManager;

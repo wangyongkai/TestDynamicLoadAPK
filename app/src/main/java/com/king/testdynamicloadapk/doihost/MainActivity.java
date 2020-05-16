@@ -41,64 +41,42 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
     private ListView mListView;
     private TextView mNoPluginTextView;
+    //------------------------------------------------------------------------
+
+
+    //任玉刚的博客  《开发艺术探索》作者
+    //  https://blog.csdn.net/singwhatiwanna
+
+
+    //dex如何加载   资源如何加载   so如何加载 ？
+
+    //------------------------------------------------------------------------
+
+
+    //问题1：so文件的加载原理
+    //通过查看app的默认类加载器dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/com.king.testdynamicloadapk-2/base.apk"],nativeLibraryDirectories=[/data/app/com.king.testdynamicloadapk-2/lib/x86, /system/lib, /vendor/lib]]]
+    //nativeLibraryDirectories就是加载so文件的路径(私有路径不可写操作)，可以传一个路径数组。当用到so时，System.loadlibrary就是从这些路径去找对应名字的so加载，不调用不会主动去加载so。System.load(filepath)可以加载特定路径下的so。
 
 
     //------------------------------------------------------------------------
 
-    //问题1：一个类 继承的父类中 和 实现的接口中 含有相同的方法
-    //接口优先级高于父类。这个类没实现方法，就把父类中的方法当做接口方法的实现。
-    // 这个类实现了方法，就把这个类的方法当接口的实现方法。
-
-    //------------------------------------------------------------------------
-
-    //问题2：so库如何加载
-
-    //so文件安装后放在 /data/data/包名/lib/ 目录下 该目录是程序不能操作的，
-    // 不能在程序运行时，向该目录拷贝.so文件 。所以要想动态加载so 只能用 System.load(filepath);
-    //举例：如何在不安装app的情况下更新线上的so库？
-    // 思路：第一次安装带上so用System.loadlibrary加载so
-    // 以后启动app都请求接口查看是否需要更新so 如果需要则则先下载so 同时修改加载so的地方为System.load(filepath)
-    //补充：思路不对。第一次是用PathClassLoader加载so  加载插件会用另一个DexClassLoader中指定so路径
-    //不可能修改PathClassLoader加载的so的路径。如果指定DexClassLoader的so路径为PathClassLoader加载的so的
-    // 路径，则因为目录不能修改。如果指定其他目录。则插件中System.loadlibrary不行。
-    //还有 插件化就是为了减少包的大小  所以壳中应该尽量不带插件中so
-
-
+    //问题2：插件中的so库加载过程
+//加载插件的类加载器DexClassLoader，构造时传入so的加载路径librarySearchPath 这个就是指定本地so的路径 所以把所有插件的so都复制到这个路径下
     //本项目中在加载插件apk的时候 将其中的so复制到/data/user/0/com.king.testdynamicloadapk/app_pluginlib目录下
     //然后利用DexClassLoader传进这个so的path进行动态加载apk中的so文件
 
-
-    //问题：插件中用System.loadlibrary加载so 怎么知道去哪个路径下加载so
-    //DexClassLoader传入参数librarySearchPath 这个就是指定本地so的路径 所以把所有插件的so都复制到这个路径下  控制好更新即可
-
-
     //------------------------------------------------------------------------
 
 
-    //问题3：每一个插件apk 新建一个DexClassLoader 这样导致每个插件里的类都是单独的
-    // 即使类名完全一致 也是两个不同的类   那么插件中继承的dllibrary中的类呢
-    // 跟壳中的dllibrary中的应该也是不同的类  这样插件中如果有更新dllibrary那不是跟壳中的dllibrary不对齐了？
-
-    //到底有没有加载两份dllibrar？？ 或者怎么保证壳子中加载的类 插件不再重复加载？
-    //解决方案：将DexClassLoader的父加载器设置为PathClassLoader
-
-
-    //app类加载原理：
-    //任何运行的Android应用至少包含有两个 ClassLoader，每个应用中的PathClassLoader拥有同一个
-    // parent即是BootClassLoader，这样就保证了系统代码共享以及应用代码隔离，如下图。
-
-    //classloader加载时先查找此当前类有没有被加载过 如果没有则查有父类加载器则用父类加载器加载
-    //DexClassLoader构造时传的的父类加载器竟然是PathClassLoader
-    // 例如插件中的DLBasePluginActivity  应用启动时PathClassLoader肯定已经加
-    // 载过DLBasePluginActivity 所以DexClassLoader不会再加载
-
-
-    //结论：
-    // 1.DexClassLoader构造时可以指定PathClassLoader 注意不是继承关系 是组合
-    // 2.壳中共有的代码 插件中不会再次加载 因为插件的父类加载器是PathClassLoader已经加载过
-
-
-    //插件打好包后 又在壳的dllibrary修改了代码 比如增加一个变量  则加载插件类时报错
+    //问题3：如何保证插件中使用的共有的类例如dllibrary库中的类，每个插件共享一份，而不是每个插件都加载各自的一份？
+    // 每一个插件apk 新建一个DexClassLoader 这样导致每个插件里的类都是单独的
+    // 即使类名完全一致 也是两个不同的类（因为类加载器不同） 。本项目中将加载各个插件的DexClassLoader的父类加载器设置为PathClassLoader（即壳子的类加载器）
+    // 双亲委派原则保证共享的类只是壳子的类加载器加载一次。
+    //
+    //
+    //
+    //问题：插件和壳子都依赖dllibrary库，并且都需要打包。如果两者打包时依赖dllibrary库不一致，会怎么样？
+    // 例如：插件打好包后 又在壳的dllibrary修改了代码 比如增加一个变量 打包壳子后加载插件类时报错
     // java.lang.IncompatibleClassChangeError: Structural change of com.ryg.dynamicload.DLBasePluginActivity
     // is hazardous (/data/user/0/com.king.testdynamicloadapk/app_dex/plugin-debug.dex at compile time,
     // /data/app/com.king.testdynamicloadapk-2/oat/x86/base.odex at runtime): Instance field count off: 6 vs 7
@@ -108,11 +86,11 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //------------------------------------------------------------------------
 
 
-    //问题4：插件dex是如何被加载的
+    //问题4：类是用到才加载的吗？  插件dex是如何被加载的
     // 插件MainActivity中用到了一个类TestA 可是项目中只是调用了loadPluginClass加载了MainActivity一个类
     // 但是在MainActivity中却可以使用TestA
 
-    //个人理解：因为dexclassloader写了dex文件的路径 所以加载一个类 会顺便把dex中的与这个类相关的类都加载
+    //个人理解：因为dexclassloader写了dex文件的路径 所以加载一个类 会顺便把dex中的与这个类相关的类都加载  相关都加载还是整个dex都加载？？
 
 
     //------------------------------------------------------------------------
@@ -144,19 +122,98 @@ public class MainActivity extends Activity implements OnItemClickListener {
     //------------------------------------------------------------------------
 
 
-    //问题8：DexClassLoader或者PathClassLoader的区别
-    //DexClassLoader可以指定优化后的dex的存储路径 而PathClassLoademer没有指定的参数
-    //Android系统通过PathClassLoader来加载系统类和主dex中的类。classloader中的
-    // SystemClassLoader就是PathClassLoader
+    //问题8：android中的类加载器？
+    //ContextImpl中获取的类加载器是SystemClassLoader类加载器
+    //而SystemClassLoader类加载器的实例其实是PathClassLoader加载器
+    //结论：Android中默认获取的类加载器实际是PathClassLoader对象。而传入PathClassLoader对象的父类加载器是BootClassLoader加载器。
 
-    //如一个apk安装后的dex中的自定义activity类是用PathClassLoader加载的。而继承的Activity类是用BootClassLoader加载的。
+    //    /**
+    //     * Encapsulates the set of parallel capable loader types.
+    //     */
+    //    private static ClassLoader createSystemClassLoader() {
+    //        String classPath = System.getProperty("java.class.path", ".");
+    //        String librarySearchPath = System.getProperty("java.library.path", "");
+    //
+    //        // String[] paths = classPath.split(":");
+    //        // URL[] urls = new URL[paths.length];
+    //        // for (int i = 0; i < paths.length; i++) {
+    //        // try {
+    //        // urls[i] = new URL("file://" + paths[i]);
+    //        // }
+    //        // catch (Exception ex) {
+    //        // ex.printStackTrace();
+    //        // }
+    //        // }
+    //        //
+    //        // return new java.net.URLClassLoader(urls, null);
+    //
+    //        // TODO Make this a java.net.URLClassLoader once we have those?
+    //        return new PathClassLoader(classPath, librarySearchPath, BootClassLoader.getInstance());
+    //    }
+
+
+    //问题：类加载原理：
+//如果一个类加载器收到了类加载器的请求.它首先不会自己去尝试加载这个类.而是把这个请求委派给父加载器去完成.每个层次的类加载器都是如此.因此所有的加载请求最终都会传送到
+// Bootstrap类加载器(启动类加载器)中.只有父类加载反馈自己无法加载这个请求(它的搜索范围中没有找到所需的类)时.子加载器才会尝试自己去加载。
+//个人理解：类加载器先判断当前要加载的类能不能找到。如果找不到则委派给父类而不是自己去加载。
+
+
+    //个人理解：一个apk安装后的dex中的自定义activity类是用PathClassLoader加载的。而继承的Activity类是用BootClassLoader加载的（dvm中所有应用公用一份Activity类 ？）。
+//任何运行的Android应用至少包含有两个 ClassLoader，每个应用中的PathClassLoader拥有同一个parent即是BootClassLoader，这样就保证了系统代码共享以及应用代码隔离。
+
+
+    // 问题：DexClassLoader或者PathClassLoader的区别
+    //DexClassLoader可以指定优化后的dex的存储路径 而PathClassLoader没有指定的参数
+    //继承关系：1.DexClassLoader-->BaseDexClassLoader-->ClassLoader.   2.PathClassLoader-->BaseDexClassLoader-->ClassLoader.
+
+
+    //问题：类加载器和父类加载器是继承关系吗？
+    //不是继承。  依赖 < 关联 < 聚合 < 组合
+
+
+//几个方法区别：
+//findLoadedClass(String) 调用这个方法，查看这个Class是否已经别加载
+//findClass() 根据名称或位置加载.class字节码
+//definclass()把字节码转化为Class
+
+
+//loadClass源码
+//    protected Class<?> loadClass(String name, boolean resolve)
+//        throws ClassNotFoundException
+//    {
+//            // First, check if the class has already been loaded
+//            Class c = findLoadedClass(name);
+//            if (c == null) {
+//                long t0 = System.nanoTime();
+//                try {
+//                    if (parent != null) {
+//                        c = parent.loadClass(name, false);
+//                    } else {
+//                        c = findBootstrapClassOrNull(name);
+//                    }
+//                } catch (ClassNotFoundException e) {//!!!!!!注意此处：ClassNotFoundException
+//                    // ClassNotFoundException thrown if class not found
+//                    // from the non-null parent class loader
+//                }
+//
+//                if (c == null) {
+//                    // If still not found, then invoke findClass in order
+//                    // to find the class.
+//                    long t1 = System.nanoTime();
+//                    c = findClass(name);
+//
+//                    // this is the defining class loader; record the stats
+//                }
+//            }
+//            return c;
+//    }
 
 
     //------------------------------------------------------------------------
 
 
     //问题9：多dex下  如何先加载主dex  后加载从dex
-    //Dalivk只加载app的主dex（classes.dex），因此app需要自行加载子dex（classesN.dex）。Mutlidex.install就是干这个事的。
+    //Dalivk只加载app的主dex（classes.dex），因此app需要手动加载子dex（classesN.dex）。Mutlidex.install就是干这个事的。
 
     //Mutlidex 源码分析  原理
     //1.获取加载主dex的pathclassloader
@@ -309,7 +366,49 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
     //------------------------------------------------------------------------
 
+
+    //问题：点击应用图标启动后 系统从哪儿加载app的dex
+    ///data/app/com.king.testdynamicloadapk-2/base.apk
+
+
     //------------------------------------------------------------------------
+
+
+    //问题1：DLBasePluginActivity为什么要继承Activity 插件activity本来就是一个普通的类 父类为啥要继承activity呢
+    //继承Activity是为了插件项目能单独运行。
+
+
+    //------------------------------------------------------------------------
+
+
+    //问题2：插件内第一个页面跳转第二个页面 startactivity直接可行吗
+    //不可行。第二个页面没有注册。
+
+
+    //------------------------------------------------------------------------
+
+
+    //问题3：从一个插件的界面跳转到另一个插件的界面 如何实现？？？
+    //DLPluginManager跳转即可。
+
+    //------------------------------------------------------------------------
+
+
+    //问题4：如何保证插件单独运行没有问题？
+    //每个插件的入口activity在清单文件中配置，相当于一个单独的app项目。插件中其他页面只能通过DLPluginManager用
+    //代理的方式执行。因为没注册。
+
+
+    //------------------------------------------------------------------------
+
+
+    //问题5:菜单文件什么时候加载？
+
+
+    //------------------------------------------------------------------------
+
+    //DLProxyActivity DLProxyFragmentActivity启动模式不能设置为单例。因为插件中的每个界面启动都要启动一次代理界面。
+    //也就是每次启动代理界面都实例一次界面。
 
     //------------------------------------------------------------------------
 
@@ -333,20 +432,20 @@ public class MainActivity extends Activity implements OnItemClickListener {
 
 
         int i = 1;
-        //看到本地库so有三个目录
-        //dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/com.king.testdynamicloadapk-1/base.apk"],
-        // nativeLibraryDirectories=[/data/app/com.king.testdynamicloadapk-1/lib/x86, /system/lib, /vendor/lib]]]
+
+
+//查看app的默认类加载器
         ClassLoader classLoader = getClassLoader();//dalvik.system.PathClassLoader
         if (classLoader != null) {
             Log.i("MainActivity", "[onCreate] classLoader " + i + " : " + classLoader.toString());
-            while (classLoader.getParent() != null) {
+            //dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/com.king.testdynamicloadapk-2/base.apk"],nativeLibraryDirectories=[/data/app/com.king.testdynamicloadapk-2/lib/x86, /system/lib, /vendor/lib]]]
+            while (classLoader.getParent() != null) {  //可知so可以从3个路径加载2/lib/x86, /system/lib, /vendor/lib  这3个地方都是不能动的私有空间？
                 classLoader = classLoader.getParent();
                 i++;
                 Log.i("MainActivity", "[onCreate] classLoader " + i + " : " + classLoader.toString());
+                //java.lang.BootClassLoader@8ed6ea9
             }
         }
-
-
         HostInterfaceManager.setHostInterface(new HostInterfaceImp());
     }
 

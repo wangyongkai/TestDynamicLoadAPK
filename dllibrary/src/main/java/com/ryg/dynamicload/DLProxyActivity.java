@@ -47,8 +47,8 @@ public class DLProxyActivity extends Activity implements DLAttachable {
     }
 
     @Override
-    public void attach(DLPlugin remoteActivity, DLPluginManager pluginManager) {
-        mRemoteActivity = remoteActivity;
+    public void attach(DLPlugin remoteActivity) {
+        mRemoteActivity = remoteActivity;//拿到被代理的插件中的Activity
     }
 
     @Override

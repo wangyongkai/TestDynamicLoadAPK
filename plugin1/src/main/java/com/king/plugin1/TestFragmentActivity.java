@@ -33,13 +33,13 @@ public class TestFragmentActivity extends DLBasePluginFragmentActivity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.test);
+        setContentView(R.layout.test);//实际调用代理activity的setContentView方法
         // 输出Parcelable对象信息
         Toast.makeText(that, getIntent().getExtras().getParcelable("person").toString(),
                 Toast.LENGTH_SHORT).show();
 
         Log.d(TAG, "### person info : " + getIntent().getExtras().getParcelable("person"));
-        TestButton button = (TestButton) findViewById(R.id.button1);
+        Button button = (Button) findViewById(R.id.button1);//实际是调用代理的findViewById方法
         button.setText(that.getResources().getString(R.string.test));
         button.setOnClickListener(new OnClickListener() {
 
@@ -84,10 +84,10 @@ public class TestFragmentActivity extends DLBasePluginFragmentActivity
             transaction.addToBackStack("TestFragment#1");
             transaction.commit();
         } else if (v == mStartPluginB) {
-            int result = startPluginActivity(new DLIntent("com.ryg.dynamicload.sample.mainpluginb",
+            int result = startPluginActivity(new DLIntent("com.king.plugin2",
                     ".MainActivity"));
             if (result != DLPluginManager.START_RESULT_SUCCESS) {
-                Toast.makeText(this, "start Activity failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(that, "start Activity failed", Toast.LENGTH_SHORT).show();
             }
         }
 

@@ -1,6 +1,5 @@
 rootProject.name='TestDynamicLoadAPK'
 include ':app'
 include ':dllibrary'
-include ':plugin'
 include ':plugin1'
 include ':plugin2'

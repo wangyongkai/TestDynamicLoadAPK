@@ -25,7 +25,7 @@ public class MainActivity extends DLBasePluginActivity {
 
     private static final String TAG = "Client-MainActivity";
     private ServiceConnection mConnecton;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,6 +34,7 @@ public class MainActivity extends DLBasePluginActivity {
 
     private void initView(Bundle savedInstanceState) {
         that.setContentView(generateContentView(that));
+        //setContentView(R.layout.activity_main);
     }
 
     private View generateContentView(final Context context) {
@@ -54,7 +55,7 @@ public class MainActivity extends DLBasePluginActivity {
                 startPluginActivityForResult(intent, 0);
             }
         });
-        
+
         Button button2 = new Button(context);
         button2.setText("Start Service");
         layout.addView(button2, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -64,8 +65,8 @@ public class MainActivity extends DLBasePluginActivity {
                 startPluginService(intent);
             }
         });
-        
-       
+
+
         Button button3 = new Button(context);
         button3.setText("bind Service");
         layout.addView(button3, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -76,8 +77,9 @@ public class MainActivity extends DLBasePluginActivity {
                     mConnecton = new ServiceConnection() {
                         public void onServiceDisconnected(ComponentName name) {
                         }
+
                         public void onServiceConnected(ComponentName name, IBinder binder) {
-                            int sum = ((ITestServiceInterface)binder).sum(5, 5);
+                            int sum = ((ITestServiceInterface) binder).sum(5, 5);
                             Log.e("MainActivity", "onServiceConnected sum(5 + 5) = " + sum);
                         }
                     };
@@ -86,7 +88,7 @@ public class MainActivity extends DLBasePluginActivity {
                 bindPluginService(intent, mConnecton, Context.BIND_AUTO_CREATE);
             }
         });
-        
+
         Button button4 = new Button(context);
         button4.setText("unbind Service");
         layout.addView(button4, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);

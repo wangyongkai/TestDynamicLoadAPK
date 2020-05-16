@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/TestDynamicLoadAPK.iml" filepath="$PROJECT_DIR$/TestDynamicLoadAPK.iml" group="TestDynamicLoadAPK" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="TestDynamicLoadAPK/app" />
       <module fileurl="file://$PROJECT_DIR$/dllibrary/dllibrary.iml" filepath="$PROJECT_DIR$/dllibrary/dllibrary.iml" group="TestDynamicLoadAPK/dllibrary" />
-      <module fileurl="file://$PROJECT_DIR$/plugin/plugin.iml" filepath="$PROJECT_DIR$/plugin/plugin.iml" group="TestDynamicLoadAPK/plugin" />
       <module fileurl="file://$PROJECT_DIR$/plugin1/plugin1.iml" filepath="$PROJECT_DIR$/plugin1/plugin1.iml" group="TestDynamicLoadAPK/plugin1" />
       <module fileurl="file://$PROJECT_DIR$/plugin2/plugin2.iml" filepath="$PROJECT_DIR$/plugin2/plugin2.iml" group="TestDynamicLoadAPK/plugin2" />
     </modules>
